@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boston turnout — Massachusetts State Primary</title>
+<meta name="description" content="Ballots cast by ward and precinct in Boston, from figures the Boston Election Department sends through election day.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EEF1F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1620" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%2316202B'/%3E%3Cpath d='M7 22V10M12 22V14M17 22V8M22 22V17' stroke='%2341b6c4' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<a class="skip" href="#ledger">Skip the map, read the precinct table</a>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <p class="eyebrow">
+      <span class="eyebrow-place" id="place">Boston, Massachusetts</span>
+      <span class="eyebrow-sep" aria-hidden="true">/</span>
+      <span id="election-name">Massachusetts State Primary</span>
+    </p>
+    <label class="election-pick" id="election-pick" hidden>
+      <span>Election</span>
+      <select id="election-select"></select>
+    </label>
+  </div>
+</header>
+
+<main>
+  <!-- The count, the day that produced it, and the moment it was taken. -->
+  <section class="tally" aria-labelledby="hero-h">
+    <div class="wrap">
+      <h1 id="hero-h" class="visually-hidden">Ballots cast in Boston</h1>
+      <p class="hero-count"><span id="count">&mdash;</span></p>
+      <p class="hero-line">
+        <strong id="share">&mdash;</strong> of
+        <span id="registered">&mdash;</span> registered voters
+      </p>
+      <p class="hero-time">Counted at <time id="asof">&mdash;</time><span id="hero-ref"></span></p>
+
+      <div class="strip-head">
+        <h2 id="strip-h">The day so far</h2>
+        <p>Choose a time to redraw the map.</p>
+      </div>
+      <div class="strip" id="strip" role="radiogroup" aria-labelledby="strip-h"></div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="map-h">
+    <div class="wrap">
+      <h2 id="map-h">Turnout by precinct</h2>
+      <p class="lede">
+        Shading shows the share of registered voters who have cast a ballot.
+        Every figure on this map is also in the
+        <a href="#ledger">precinct table</a>.
+      </p>
+      <div class="map-frame">
+        <div id="map" role="region" aria-label="Map of Boston precincts shaded by turnout. The precinct table below carries the same figures as text."></div>
+        <div class="legend" id="legend" aria-hidden="true"></div>
+      </div>
+      <div class="picked" id="picked" hidden aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="wards-h">
+    <div class="wrap">
+      <h2 id="wards-h">By ward</h2>
+      <div class="scroll">
+        <table class="grid" id="wards">
+          <caption class="visually-hidden">Ballots cast and turnout by ward</caption>
+          <thead><tr>
+            <th scope="col">Ward</th>
+            <th scope="col" class="num">Ballots</th>
+            <th scope="col" class="num">Registered</th>
+            <th scope="col" class="num">Turnout</th>
+            <th scope="col" class="bar-col">Share</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="ledger" aria-labelledby="ledger-h">
+    <div class="wrap">
+      <h2 id="ledger-h">Every precinct</h2>
+      <p class="lede">Choose a row to find that precinct on the map.</p>
+      <div class="controls">
+        <label class="field">
+          <span>Find a precinct</span>
+          <input type="search" id="filter" placeholder="Ward 8, or 0803" autocomplete="off">
+        </label>
+        <p class="count-line" id="rowcount" aria-live="polite"></p>
+      </div>
+      <div class="scroll tall">
+        <table class="grid ledger-grid" id="precincts">
+          <caption class="visually-hidden">Ballots cast and turnout for every Boston precinct</caption>
+          <thead><tr>
+            <th scope="col"><button type="button" data-sort="id" aria-label="Sort by precinct">Precinct</button></th>
+            <th scope="col" class="num"><button type="button" data-sort="count" aria-label="Sort by ballots">Ballots</button></th>
+            <th scope="col" class="num"><button type="button" data-sort="registered" aria-label="Sort by registered voters">Registered</button></th>
+            <th scope="col" class="num"><button type="button" data-sort="rate" aria-label="Sort by turnout">Turnout</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="notes" aria-labelledby="notes-h">
+    <div class="wrap">
+      <h2 id="notes-h">Where these figures come from</h2>
+      <p class="lede">
+        Numbered notes. A number beside a figure on this page points to the
+        note that explains it.
+      </p>
+      <ol class="notes-list" id="notes-body"></ol>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p id="foot-source"></p>
+    <p>Built from files the city sends. The workbooks, the boundary file, and
+       the code that reads them are in the repository.</p>
+  </div>
+</footer>
+
+<noscript>
+  <div class="wrap noscript">
+    <p><strong>This page needs JavaScript to draw the map and the tables.</strong>
+       The figures behind it are plain files you can read directly:
+       <code>data/2026-09-01-ma-state-primary/turnout.json</code>.</p>
+  </div>
+</noscript>
+
+<script src="assets/vendor/leaflet/leaflet.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

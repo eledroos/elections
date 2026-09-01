@@ -1,0 +1,35 @@
+id = "2026-09-01-ma-state-primary"
+name = "Massachusetts State Primary"
+date = "2026-09-01"
+jurisdiction = "Boston, Massachusetts"
+timezone = "America/New_York"
+
+[boundaries]
+file = "reference/boundaries/boston_precinct_boundaries.geojson"
+title = "Boston Precinct Boundaries"
+publisher = "City of Boston, Analyze Boston"
+url = "https://data.boston.gov/dataset/boston-precinct-boundaries"
+license = "Open Data Commons Public Domain Dedication and License"
+retrieved = "2026-09-01"
+
+[source]
+office = "Boston Election Department"
+description = "Ward and precinct turnout, sent as a workbook at intervals through election day."
+
+# One entry for each workbook. To add the next one, copy the last block,
+# change the four values, and run `make`.
+[[snapshot]]
+id = "0900"
+label = "9:00 AM"
+time = "2026-09-01T09:00:00-04:00"
+file = "boston/900 turnout for September 1, 2026.xlsx"
+counts_sheet = 0
+percent_sheet = 1
+
+[[snapshot]]
+id = "1200"
+label = "12:00 PM"
+time = "2026-09-01T12:00:00-04:00"
+file = "boston/1200 turnout for September 1, 2026.xlsx"
+counts_sheet = 0
+percent_sheet = 1

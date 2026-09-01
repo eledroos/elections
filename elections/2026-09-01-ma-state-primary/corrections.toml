@@ -1,0 +1,25 @@
+# Each entry changes a published figure. Each entry gives a reason.
+# The site shows this list. Nothing changes a number without an entry here.
+#
+# Fields:
+#   id        a short name for the change
+#   snapshot  which snapshot the change applies to
+#   precinct  ward and precinct, each as two digits
+#   action    "drop" to remove the precinct, or "set" to replace its count
+#   observed  the value in the source file. The build stops if it differs.
+#   value     the replacement count, for "set" only
+#   reason    why the change is correct
+
+[[correction]]
+id = "w08p07-1200-phantom-precinct"
+snapshot = "1200"
+precinct = "0807"
+action = "drop"
+observed = 286
+reason = """
+Ward 8 has six precincts. The city boundary file lists six, the 9:00 AM
+workbook lists six, and the percentage sheet of this same workbook lists six.
+Only the count sheet holds a seventh, and its value of 286 is the same as
+Ward 8 Precinct 1. This is a copy error. The 286 ballots are removed from the
+ward and from the city total.
+"""

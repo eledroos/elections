@@ -1,0 +1,374 @@
+/* Boston turnout.
+   A tally sheet: ink on ledger paper, ruled lines, no shadows. The only
+   saturated colour on the page belongs to the map, so a shade always means a
+   turnout figure and never decoration. */
+
+:root {
+  --paper:      #EEF1F3;
+  --card:       #FFFFFF;
+  --ink:        #16202B;
+  --ink-soft:   #46596A;
+  --ink-faint:  #63788A;
+  --rule:       #C2CDD5;
+  --rule-soft:  #DCE4E9;
+  --stamp:      #9A2733;
+  --focus:      #14607A;
+
+  /* Sequential, colourblind-safe. Light to dark is low to high turnout. */
+  --c1: #ffffcc; --c2: #c7e9b4; --c3: #7fcdbb;
+  --c4: #41b6c4; --c5: #2c7fb8; --c6: #253494;
+  --c0: #B3BFC8;                      /* no registered voters recorded */
+
+  --wrap: 1120px;
+  --gap: clamp(1.15rem, 4vw, 2rem);
+  --sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:     #0E141C;
+    --card:      #161F2A;
+    --ink:       #E9F0F6;
+    --ink-soft:  #A8B9C6;
+    --ink-faint: #8497A6;
+    --rule:      #31414F;
+    --rule-soft: #223040;
+    --stamp:     #EE909A;
+    --focus:     #6FCBE4;
+    --c0:        #384654;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gap); }
+
+a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: .18em; }
+a:hover { text-decoration-color: currentColor; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  border: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+.skip {
+  position: absolute; left: 50%; top: 0; transform: translate(-50%, -120%);
+  z-index: 1000; background: var(--card); color: var(--ink);
+  padding: .8rem 1.1rem; border: 1px solid var(--ink);
+  border-radius: 0 0 8px 8px; font-weight: 600; text-decoration: none;
+}
+.skip:focus { transform: translate(-50%, 0); }
+
+/* ---- masthead ---- */
+
+.masthead { border-bottom: 1px solid var(--rule); background: var(--card); }
+.masthead-in {
+  display: flex; flex-wrap: wrap; gap: .6rem 1.25rem;
+  align-items: center; justify-content: space-between; padding-block: .8rem;
+}
+.eyebrow {
+  margin: 0; font-size: .8125rem; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase;
+}
+.eyebrow-sep { color: var(--rule); margin-inline: .5em; }
+#election-name { color: var(--ink-soft); }
+
+.election-pick { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; }
+.election-pick > span { color: var(--ink-faint); font-weight: 600; }
+.election-pick select {
+  font: inherit; font-weight: 600; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 6px;
+  padding: .5rem .6rem; min-height: 44px;
+}
+
+/* ---- the count, and the day that produced it ---- */
+
+.tally { padding-block: clamp(1.5rem, 5vw, 2.75rem) clamp(1.5rem, 4vw, 2.25rem); }
+
+.hero-count {
+  margin: 0;
+  font-size: clamp(3.5rem, 15vw, 7rem);
+  font-weight: 800;
+  font-stretch: 76%;
+  line-height: .86;
+  letter-spacing: -.028em;
+  font-feature-settings: "tnum" 1;
+}
+
+.hero-line {
+  margin: clamp(.7rem, 2vw, 1rem) 0 0;
+  font-size: clamp(1.0625rem, 3.2vw, 1.3125rem);
+  color: var(--ink-soft);
+}
+.hero-line strong { color: var(--ink); font-weight: 700; }
+
+.hero-time {
+  margin: .35rem 0 0;
+  font-family: var(--mono); font-size: .8125rem;
+  letter-spacing: .01em; color: var(--ink-faint);
+}
+.hero-time .ref { margin-inline-start: .4em; }
+
+/* The day strip. Each column is a moment the department reported. It selects
+   the snapshot and shows the day's progression in the same object. */
+
+.strip-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; margin: clamp(1.25rem, 3.5vw, 1.75rem) 0 .6rem;
+  padding-top: clamp(1.25rem, 3.5vw, 1.75rem);
+  border-top: 1px solid var(--rule);
+}
+.strip-head h2 { margin: 0; font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+.strip-head p { margin: 0; font-size: .8125rem; color: var(--ink-faint); }
+
+/* Columns stay column-shaped however few moments the day has so far. */
+.strip {
+  display: flex; gap: 1px; width: max-content; max-width: 100%;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  background: var(--rule-soft);
+  border: 1px solid var(--rule); border-radius: 8px;
+}
+
+.tick {
+  flex: 0 0 9.5rem; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: .5rem;
+  padding: .75rem .85rem .8rem;
+  background: var(--card); color: inherit; font: inherit;
+  border: 0; text-align: left; cursor: pointer;
+  transition: background .14s;
+}
+.tick:hover { background: color-mix(in srgb, var(--focus) 6%, var(--card)); }
+.tick[aria-checked="true"] { background: color-mix(in srgb, var(--focus) 10%, var(--card)); }
+
+.tick-fill {
+  position: relative; height: 4.5rem;
+  background: var(--rule-soft); border-radius: 3px; overflow: hidden;
+}
+.tick-fill i {
+  position: absolute; inset-inline: 0; bottom: 0; display: block;
+  background: var(--c3); transition: height .5s cubic-bezier(.2, .7, .3, 1);
+}
+.tick[aria-checked="true"] .tick-fill i { background: var(--c6); }
+
+.tick-time { font-size: .9375rem; font-weight: 700; line-height: 1.2; }
+.tick[aria-checked="true"] .tick-time::after {
+  content: ""; display: inline-block; vertical-align: .12em;
+  width: .4rem; height: .4rem; margin-inline-start: .45rem;
+  border-radius: 50%; background: var(--ink);
+}
+.tick-count { font-family: var(--mono); font-size: .8125rem; color: var(--ink-soft); }
+.tick-share { font-family: var(--mono); font-size: .75rem; color: var(--ink-faint); }
+
+/* ---- section rhythm ---- */
+
+.band { padding-bottom: clamp(1.75rem, 5vw, 2.75rem); }
+.band > .wrap > h2 {
+  margin: 0 0 .35rem;
+  font-size: clamp(1.1875rem, 3.4vw, 1.4375rem);
+  font-weight: 700; letter-spacing: -.018em;
+}
+.lede { margin: 0 0 1rem; font-size: .9375rem; color: var(--ink-soft); max-width: 64ch; }
+
+/* ---- map ---- */
+
+.map-frame {
+  position: relative; border: 1px solid var(--rule);
+  border-radius: 10px; overflow: hidden; background: var(--card);
+}
+#map { height: clamp(360px, 54vh, 620px); background: var(--card); }
+
+.legend {
+  position: absolute; left: 10px; bottom: 10px; z-index: 500;
+  display: flex; flex-direction: column; gap: .3rem;
+  padding: .55rem .7rem;
+  background: color-mix(in srgb, var(--card) 93%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule); border-radius: 7px;
+  font-family: var(--mono); font-size: .6875rem; line-height: 1.35;
+  color: var(--ink-soft);
+}
+.legend-title {
+  font-family: var(--sans); font-size: .625rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+}
+.legend-row { display: flex; align-items: center; gap: .45rem; white-space: nowrap; }
+.legend-row i { width: 15px; height: 11px; border-radius: 2px; border: 1px solid rgba(0,0,0,.2); }
+
+.picked {
+  display: flex; gap: .75rem; align-items: flex-start;
+  margin-top: .85rem; padding: .85rem 1rem;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 8px;
+}
+.picked-chip {
+  flex: 0 0 auto; width: 1.5rem; height: 1.5rem; margin-top: .1rem;
+  border-radius: 4px; border: 1px solid rgba(0,0,0,.2);
+}
+.picked h3 { margin: 0 0 .15rem; font-size: 1.0625rem; font-weight: 700; }
+.picked p { margin: 0; font-family: var(--mono); font-size: .8125rem; color: var(--ink-soft); }
+
+.leaflet-container { font-family: var(--sans); background: var(--card); }
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--card) 90%, transparent) !important;
+  color: var(--ink-faint) !important; font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: var(--ink-soft) !important; }
+.leaflet-bar a {
+  background: var(--card) !important; color: var(--ink) !important;
+  border-bottom-color: var(--rule) !important;
+  width: 34px !important; height: 34px !important; line-height: 34px !important;
+}
+.leaflet-bar a:hover { background: var(--paper) !important; }
+.leaflet-tooltip {
+  background: var(--ink) !important; color: var(--paper) !important;
+  border: 0 !important; border-radius: 5px !important;
+  font-family: var(--mono) !important; font-size: 11.5px !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,.32) !important; padding: 5px 8px !important;
+}
+.leaflet-tooltip::before { display: none !important; }
+
+/* ---- tables ---- */
+
+.scroll {
+  overflow: auto; overscroll-behavior-x: contain;
+  border: 1px solid var(--rule); border-radius: 10px; background: var(--card);
+}
+.scroll.tall { max-height: 30rem; }
+
+.grid { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+.grid th, .grid td {
+  padding: .55rem .85rem; border-bottom: 1px solid var(--rule-soft);
+  text-align: left; white-space: nowrap;
+}
+.grid thead th {
+  position: sticky; top: 0; z-index: 2; background: var(--card);
+  border-bottom: 1px solid var(--rule);
+  font-size: .6875rem; font-weight: 700; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-faint); padding-block: .5rem;
+}
+.grid tbody tr:last-child td, .grid tbody tr:last-child th { border-bottom: 0; }
+.grid .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.grid .code { font-family: var(--mono); font-size: .8125rem; font-weight: 400; }
+.grid .code b { font-weight: 600; }
+.grid .code span { color: var(--ink-faint); }
+.grid th[scope="row"] { font-weight: 500; }
+
+.grid thead th button {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: .3rem;
+  min-height: 44px; font: inherit; letter-spacing: inherit;
+  text-transform: inherit; color: inherit;
+}
+.grid thead th button::after { content: "\2195"; opacity: .4; font-size: .9em; }
+.grid thead th[aria-sort="ascending"]  button::after { content: "\2191"; opacity: 1; }
+.grid thead th[aria-sort="descending"] button::after { content: "\2193"; opacity: 1; }
+.grid thead th[aria-sort] button { color: var(--ink); }
+
+.grid tbody tr { cursor: pointer; }
+.grid tbody tr:hover { background: color-mix(in srgb, var(--focus) 7%, transparent); }
+.grid tbody tr.on { background: color-mix(in srgb, var(--focus) 14%, transparent); }
+
+.swatch {
+  display: inline-block; width: 10px; height: 10px; margin-inline-end: .5rem;
+  border-radius: 2px; vertical-align: baseline; border: 1px solid rgba(0,0,0,.2);
+}
+
+.bar-col { width: 32%; min-width: 7rem; }
+.bar { display: block; height: 9px; background: var(--rule-soft); border-radius: 2px; }
+.bar i { display: block; height: 100%; border-radius: 2px; }
+
+.ref {
+  font-family: var(--sans); font-size: .6875rem; font-weight: 700;
+  vertical-align: super; color: var(--stamp);
+  text-decoration: none; padding-inline: .15em;
+}
+.ref:hover, .ref:focus-visible { text-decoration: underline; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem 1.25rem; margin-bottom: .85rem; }
+.field { display: flex; flex-direction: column; gap: .3rem; flex: 1 1 15rem; max-width: 21rem; }
+.field span { font-size: .8125rem; font-weight: 600; color: var(--ink-soft); }
+.field input {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--card);
+  border: 1px solid var(--rule); border-radius: 7px;
+  padding: .55rem .7rem; min-height: 44px;
+}
+.field input::placeholder { color: var(--ink-faint); }
+.count-line { margin: 0 0 .6rem; font-family: var(--mono); font-size: .8125rem; color: var(--ink-faint); }
+.empty { padding: 1.5rem .85rem; color: var(--ink-soft); white-space: normal; }
+
+/* ---- footnotes ---- */
+
+.notes-list {
+  margin: 0; padding: 0; list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.notes-list > li {
+  display: grid; grid-template-columns: 2rem 1fr; gap: 0 .5rem;
+  padding-block: 1rem; border-bottom: 1px solid var(--rule-soft);
+}
+.notes-list > li:last-child { border-bottom: 0; }
+.note-n {
+  font-family: var(--mono); font-size: .8125rem; font-weight: 600;
+  color: var(--ink-faint); padding-top: .1rem;
+}
+.note-body h3 { margin: 0 0 .35rem; font-size: .9375rem; font-weight: 700; }
+.note-body p { margin: 0 0 .5rem; font-size: .9375rem; color: var(--ink-soft); max-width: 68ch; }
+.note-body p:last-child { margin-bottom: 0; }
+.note-body strong { color: var(--ink); }
+.note-body .files { font-family: var(--mono); font-size: .8125rem; color: var(--ink-faint); }
+.notes-list > li.corrected .note-n,
+.notes-list > li.corrected .note-body h3 { color: var(--stamp); }
+.note-body .effect {
+  font-family: var(--mono); font-size: .8125rem; color: var(--ink);
+  padding: .45rem .6rem; border: 1px solid var(--rule); border-radius: 6px;
+  display: inline-block; white-space: normal;
+}
+:target .note-body h3 { text-decoration: underline; text-decoration-thickness: 2px; }
+
+/* ---- footer ---- */
+
+.foot {
+  border-top: 1px solid var(--rule); padding-block: 1.5rem 2.5rem;
+  font-size: .8125rem; color: var(--ink-faint); background: var(--card);
+}
+.foot p { margin: 0 0 .4rem; max-width: 68ch; }
+.noscript { padding-block: 1.5rem; }
+.noscript code { font-family: var(--mono); font-size: .8125rem; }
+
+/* ---- small screens ---- */
+
+@media (max-width: 40rem) {
+  .tally { padding-top: 1.35rem; }
+  .tick { flex-basis: 7.25rem; padding: .65rem .7rem .7rem; }
+  .tick-fill { height: 3.5rem; }
+  .grid th, .grid td { padding: .5rem .65rem; }
+  .scroll.tall { max-height: 25rem; }
+  .legend { font-size: .625rem; padding: .45rem .55rem; }
+  .bar-col { display: none; }
+  .notes-list > li { grid-template-columns: 1.5rem 1fr; }
+  .masthead-in { padding-block: .65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
