@@ -210,8 +210,11 @@ a:hover { text-decoration-color: currentColor; }
    city's own proportion keeps the map from filling itself with harbour. */
 #map { width: auto; aspect-ratio: 1 / 1.05; height: min(72vh, 680px); background: var(--card); }
 
+/* Below the two-column layout the frame fills the page. It must stretch, so
+   the automatic side margins that centre it on a wide screen are removed;
+   with them the frame sizes to its content and the map collapses. */
 @media (max-width: 61.99rem) {
-  .map-frame { width: auto; }
+  .map-frame { width: 100%; margin-inline: 0; }
   #map { width: 100%; aspect-ratio: auto; height: clamp(330px, 46vh, 430px); }
 }
 
