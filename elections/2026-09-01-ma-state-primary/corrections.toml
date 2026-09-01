@@ -17,9 +17,9 @@ precinct = "0807"
 action = "drop"
 observed = 286
 reason = """
-Ward 8 has six precincts. The city boundary file lists six, the 9:00 AM
-workbook lists six, and the percentage sheet of this same workbook lists six.
-Only the count sheet holds a seventh, and its value of 286 is the same as
-Ward 8 Precinct 1. This is a copy error. The 286 ballots are removed from the
-ward and from the city total.
+Ward 8 has six precincts. The city boundary file lists six. The 9:00 AM
+workbook lists six. The percentage sheet of this same workbook lists six.
+Only the count sheet holds a seventh precinct. Its value of 286 is the same as
+the value for Ward 8 Precinct 1. This is a copy error. This page removes the
+286 ballots from the ward total and from the city total.
 """

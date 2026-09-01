@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<a class="skip" href="#ledger">Skip the map, read the precinct table</a>
+<a class="skip" href="#ledger">Skip to the precinct table</a>
 
 <header class="masthead">
   <div class="wrap masthead-in">
@@ -56,15 +56,21 @@
     <div class="wrap">
       <h2 id="map-h">Turnout by precinct</h2>
       <p class="lede">
-        Shading shows the share of registered voters who have cast a ballot.
-        Every figure on this map is also in the
+        Shading shows the share of each precinct's registered voters who have
+        voted. Every figure on this map is also in the
         <a href="#ledger">precinct table</a>.
       </p>
-      <div class="map-frame">
-        <div id="map" role="region" aria-label="Map of Boston precincts shaded by turnout. The precinct table below carries the same figures as text."></div>
-        <div class="legend" id="legend" aria-hidden="true"></div>
+      <div class="map-layout">
+        <div class="map-frame">
+          <div id="map" role="region" aria-label="Map of Boston precincts shaded by turnout. The precinct table below carries the same figures as text."></div>
+          <div class="legend" id="legend" aria-hidden="true"></div>
+        </div>
+        <aside class="map-side" aria-labelledby="rank-h">
+          <div class="picked" id="picked" hidden aria-live="polite"></div>
+          <h3 id="rank-h" class="rank-h">Highest turnout so far</h3>
+          <ol class="rank" id="rank"></ol>
+        </aside>
       </div>
-      <div class="picked" id="picked" hidden aria-live="polite"></div>
     </div>
   </section>
 
@@ -90,7 +96,7 @@
   <section class="band" id="ledger" aria-labelledby="ledger-h">
     <div class="wrap">
       <h2 id="ledger-h">Every precinct</h2>
-      <p class="lede">Choose a row to find that precinct on the map.</p>
+      <p class="lede">Choose a row to find that precinct on the map. The panel beside the map gives its registered voters.</p>
       <div class="controls">
         <label class="field">
           <span>Find a precinct</span>
@@ -117,8 +123,8 @@
     <div class="wrap">
       <h2 id="notes-h">Where these figures come from</h2>
       <p class="lede">
-        Numbered notes. A number beside a figure on this page points to the
-        note that explains it.
+        A number beside a figure on this page points to the note that
+        explains it.
       </p>
       <ol class="notes-list" id="notes-body"></ol>
     </div>
@@ -128,8 +134,8 @@
 <footer class="foot">
   <div class="wrap">
     <p id="foot-source"></p>
-    <p>Built from files the city sends. The workbooks, the boundary file, and
-       the code that reads them are in the repository.</p>
+    <p>Built from the files the city sends. The repository holds the workbooks,
+       the boundary file, and the code that reads them.</p>
   </div>
 </footer>
 

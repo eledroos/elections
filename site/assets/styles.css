@@ -8,7 +8,7 @@
   --card:       #FFFFFF;
   --ink:        #16202B;
   --ink-soft:   #46596A;
-  --ink-faint:  #63788A;
+  --ink-faint:  #556A7B;
   --rule:       #C2CDD5;
   --rule-soft:  #DCE4E9;
   --stamp:      #9A2733;
@@ -130,8 +130,8 @@ a:hover { text-decoration-color: currentColor; }
    the snapshot and shows the day's progression in the same object. */
 
 .strip-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: 1rem; margin: clamp(1.25rem, 3.5vw, 1.75rem) 0 .6rem;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: .15rem .6rem;
+  margin: clamp(1.25rem, 3.5vw, 1.75rem) 0 .6rem;
   padding-top: clamp(1.25rem, 3.5vw, 1.75rem);
   border-top: 1px solid var(--rule);
 }
@@ -162,9 +162,12 @@ a:hover { text-decoration-color: currentColor; }
   position: relative; height: 4.5rem;
   background: var(--rule-soft); border-radius: 3px; overflow: hidden;
 }
+/* Scaled rather than resized, so the bar never asks the page to relayout. */
 .tick-fill i {
-  position: absolute; inset-inline: 0; bottom: 0; display: block;
-  background: var(--c3); transition: height .5s cubic-bezier(.2, .7, .3, 1);
+  position: absolute; inset: 0; display: block;
+  background: var(--c3);
+  transform-origin: bottom;
+  transition: transform .5s cubic-bezier(.2, .7, .3, 1);
 }
 .tick[aria-checked="true"] .tick-fill i { background: var(--c6); }
 
@@ -189,24 +192,61 @@ a:hover { text-decoration-color: currentColor; }
 
 /* ---- map ---- */
 
-.map-frame {
-  position: relative; border: 1px solid var(--rule);
-  border-radius: 10px; overflow: hidden; background: var(--card);
-}
-#map { height: clamp(360px, 54vh, 620px); background: var(--card); }
+/* Boston is very nearly square on screen, so a wide, short frame would spend
+   most of itself on water. The side column takes that width instead. */
+.map-layout { display: grid; gap: .85rem; grid-template-columns: minmax(0, 1fr); }
 
+@media (min-width: 62rem) {
+  .map-layout { grid-template-columns: minmax(0, 1fr) 18.5rem; align-items: start; }
+}
+
+.map-frame {
+  position: relative; width: fit-content; max-width: 100%; margin-inline: auto;
+  border: 1px solid var(--rule); border-radius: 10px;
+  overflow: hidden; background: var(--card);
+}
+
+/* Boston is a little taller than it is wide on screen. Giving the frame the
+   city's own proportion keeps the map from filling itself with harbour. */
+#map { width: auto; aspect-ratio: 1 / 1.05; height: min(72vh, 680px); background: var(--card); }
+
+@media (max-width: 61.99rem) {
+  .map-frame { width: auto; }
+  #map { width: 100%; aspect-ratio: auto; height: clamp(330px, 46vh, 430px); }
+}
+
+.map-side { display: flex; flex-direction: column; gap: .85rem; min-width: 0; }
+.rank-h { margin: 0; font-size: .9375rem; font-weight: 700; }
+.rank {
+  margin: 0; padding: 0; list-style: none;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--card);
+  overflow: hidden;
+}
+.rank li { border-bottom: 1px solid var(--rule-soft); }
+.rank li:last-child { border-bottom: 0; }
+.rank button {
+  all: unset; box-sizing: border-box; cursor: pointer;
+  display: flex; align-items: center; gap: .55rem;
+  width: 100%; min-height: 44px; padding: .5rem .75rem;
+  font: inherit; font-size: .875rem;
+}
+.rank button:hover { background: color-mix(in srgb, var(--focus) 7%, transparent); }
+.rank button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.rank .who { font-family: var(--mono); font-size: .8125rem; }
+.rank .val { margin-inline-start: auto; font-family: var(--mono); font-weight: 600; }
+
+/* Opaque, so the map underneath can never decide whether this is readable. */
 .legend {
   position: absolute; left: 10px; bottom: 10px; z-index: 500;
   display: flex; flex-direction: column; gap: .3rem;
   padding: .55rem .7rem;
-  background: color-mix(in srgb, var(--card) 93%, transparent);
-  backdrop-filter: blur(6px);
+  background: var(--card);
   border: 1px solid var(--rule); border-radius: 7px;
-  font-family: var(--mono); font-size: .6875rem; line-height: 1.35;
+  font-family: var(--mono); font-size: .75rem; line-height: 1.35;
   color: var(--ink-soft);
 }
 .legend-title {
-  font-family: var(--sans); font-size: .625rem; font-weight: 700;
+  font-family: var(--sans); font-size: .6875rem; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
 }
 .legend-row { display: flex; align-items: center; gap: .45rem; white-space: nowrap; }
@@ -293,10 +333,14 @@ a:hover { text-decoration-color: currentColor; }
 .bar { display: block; height: 9px; background: var(--rule-soft); border-radius: 2px; }
 .bar i { display: block; height: 100%; border-radius: 2px; }
 
+/* A superscript that is still large enough to hit. The negative margin keeps
+   the enlarged target from moving the text around it. */
 .ref {
+  display: inline-block; position: relative;
+  min-width: 24px; min-height: 24px; margin: -8px -7px;
+  padding: 8px 7px; line-height: 8px; text-align: center;
   font-family: var(--sans); font-size: .6875rem; font-weight: 700;
-  vertical-align: super; color: var(--stamp);
-  text-decoration: none; padding-inline: .15em;
+  vertical-align: super; color: var(--stamp); text-decoration: none;
 }
 .ref:hover, .ref:focus-visible { text-decoration: underline; }
 
@@ -357,9 +401,12 @@ a:hover { text-decoration-color: currentColor; }
   .tally { padding-top: 1.35rem; }
   .tick { flex-basis: 7.25rem; padding: .65rem .7rem .7rem; }
   .tick-fill { height: 3.5rem; }
-  .grid th, .grid td { padding: .5rem .65rem; }
+  .grid th, .grid td { padding: .7rem .6rem; }
+  /* Turnout is the figure people came for, so it must not scroll off.
+     Registered voters stay one tap away in the precinct panel. */
+  .ledger-grid th:nth-child(3), .ledger-grid td:nth-child(3) { display: none; }
   .scroll.tall { max-height: 25rem; }
-  .legend { font-size: .625rem; padding: .45rem .55rem; }
+  .legend { font-size: .6875rem; padding: .45rem .55rem; }
   .bar-col { display: none; }
   .notes-list > li { grid-template-columns: 1.5rem 1fr; }
   .masthead-in { padding-block: .65rem; }

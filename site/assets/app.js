@@ -25,6 +25,7 @@
     map: null,
     layer: null,
     tiles: null,
+    frame: null,
     shapes: {},
     noteOf: {}
   };
@@ -39,14 +40,17 @@
   }
 
   /* Class breaks stay fixed for the whole election, so a shade means the same
-     turnout at 9:00 as it does at 8:00 in the evening and the map visibly
-     fills in through the day. */
+     turnout at 9:00 in the morning as it does at 8:00 at night, and the map
+     visibly fills in through the day.
+
+     The top class is open ended, so the highest turnout in the election should
+     land near the last break. Pick the round step that puts it there. */
   function niceBreaks(highest) {
-    var steps = [1, 2, 2.5, 5, 10, 20, 25];
-    for (var i = 0; i < steps.length; i++) {
-      if (steps[i] * RAMP.length >= highest * 100) break;
-    }
-    var step = steps[Math.min(i, steps.length - 1)];
+    var steps = [0.5, 1, 2, 2.5, 5, 10, 15, 20, 25];
+    var want = (highest * 100) / (RAMP.length - 1);
+    var step = steps.reduce(function (best, candidate) {
+      return Math.abs(candidate - want) < Math.abs(best - want) ? candidate : best;
+    }, steps[0]);
     return RAMP.map(function (_, n) { return (n * step) / 100; });
   }
 
@@ -168,7 +172,7 @@
       fill.className = "tick-fill";
       fill.setAttribute("aria-hidden", "true");
       var bar = document.createElement("i");
-      bar.style.height = Math.max(3, (shot.total / peak) * 100) + "%";
+      bar.style.transform = "scaleY(" + Math.max(0.04, shot.total / peak).toFixed(4) + ")";
       fill.appendChild(bar);
 
       var time = document.createElement("span");
@@ -207,6 +211,7 @@
     shadeMap();
     drawWards();
     drawLedger();
+    drawRank();
     if (state.picked) showPicked(state.picked);
   }
 
@@ -236,9 +241,14 @@
     var map = L.map("map", {
       zoomControl: true,
       scrollWheelZoom: false,
-      attributionControl: true
+      attributionControl: true,
+      /* Whole zoom levels double the scale, which would leave the city
+         floating in a frame twice the size it needs. */
+      zoomSnap: 0.1,
+      zoomDelta: 0.5
     });
     state.map = map;
+    state.frame = null;
 
     var frame = [[b[1], b[0]], [b[3], b[2]]];
     function fit() { map.invalidateSize(); map.fitBounds(frame, { padding: [10, 10] }); }
@@ -340,6 +350,44 @@
     state.map.fitBounds(shape.getBounds(), { maxZoom: 15, padding: [40, 40] });
   }
 
+  function drawRank() {
+    var list = el("rank");
+    list.textContent = "";
+    state.rows
+      .filter(function (row) { return row.rate !== null; })
+      .sort(function (a, b) { return b.rate - a.rate; })
+      .slice(0, 6)
+      .forEach(function (row) {
+        var item = document.createElement("li");
+        var button = document.createElement("button");
+        button.type = "button";
+
+        var chip = document.createElement("span");
+        chip.className = "swatch";
+        chip.style.background = shadeOf(row.rate);
+        chip.style.marginInlineEnd = "0";
+
+        var who = document.createElement("span");
+        who.className = "who";
+        who.textContent = "W" + row.ward + " \u00b7 P" + row.precinct;
+
+        var value = document.createElement("span");
+        value.className = "val";
+        value.textContent = pct(row.rate);
+
+        button.append(chip, who, value);
+        button.setAttribute("aria-label",
+          "Ward " + row.ward + " Precinct " + row.precinct + ", " +
+          pct(row.rate) + " turnout. Show on the map.");
+        button.addEventListener("click", function () {
+          showPicked(row.id);
+          highlight(row.id);
+        });
+        item.appendChild(button);
+        list.appendChild(item);
+      });
+  }
+
   function showPicked(id) {
     state.picked = id;
     var row = state.rows.filter(function (r) { return r.id === id; })[0];
@@ -433,16 +481,25 @@
     });
   }
 
+  /* Accepts a ward number, a precinct code, or the shorthand the table shows:
+     "8", "ward 8", "w8", "0803", "w8 p3". Anything else matches nothing, so
+     the reader sees the empty state instead of the whole city. */
   function matches(row, needle) {
     if (!needle) return true;
-    var digits = needle.replace(/[^0-9]/g, "");
-    var words = needle.toLowerCase();
-    if (/^w/.test(words) || /ward/.test(words)) {
-      return digits ? String(row.ward) === String(parseInt(digits, 10)) : true;
+    var text = needle.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!text) return true;
+
+    if (/^[0-9]+$/.test(text)) {
+      if (text.length >= 3) return row.id.indexOf(text) === 0;
+      return row.ward === parseInt(text, 10);
     }
-    return row.id.indexOf(digits) === 0 ||
-      String(row.ward) === digits ||
-      ("w" + row.ward + "p" + row.precinct).indexOf(words.replace(/[^a-z0-9]/g, "")) === 0;
+
+    return [
+      "w" + row.ward + "p" + row.precinct,
+      "ward" + row.ward + "precinct" + row.precinct,
+      "ward" + row.ward,
+      "w" + row.ward
+    ].some(function (form) { return form.indexOf(text) === 0; });
   }
 
   function drawLedger() {
@@ -565,14 +622,14 @@
     ]));
 
     list.appendChild(note(++n, "Registered voters", [
-      para("The department does not send the number of registered voters. It " +
-        "sends a count and a percentage for each precinct, and that number " +
-        "divides out of the two exactly."),
-      para("Every workbook gives the same answer for each precinct, which is " +
-        "the check that the method holds. The city total is <strong>" +
-        commas.format(e.registeredTotal) + "</strong>. One precinct covers the " +
-        "harbor islands and records no registered voters, so it has no turnout " +
-        "figure and the map leaves it grey.")
+      para("The department does not send the number of registered voters. " +
+        "It sends a count and a percentage for each precinct. The count " +
+        "divided by the percentage gives the number of registered voters."),
+      para("Every workbook gives the same answer for each precinct. That " +
+        "agreement is the check that the method is correct. The city total " +
+        "is <strong>" + commas.format(e.registeredTotal) + "</strong>."),
+      para("One precinct covers the harbor islands. It records no registered " +
+        "voters, so it has no turnout figure. The map shows it in grey.")
     ]));
 
     list.appendChild(note(++n, "Precinct boundaries", [
@@ -580,8 +637,8 @@
         "published by " + e.boundaries.publisher + ", retrieved " +
         e.boundaries.retrieved + "."),
       para("Every precinct in the boundary file matches a precinct in the " +
-        "workbooks, with none left over on either side. Licence: " +
-        e.boundaries.license + ".")
+        "workbooks. No precinct is left over on either side."),
+      para("Licence: " + e.boundaries.license + ".")
     ]));
 
     e.corrections.forEach(function (fix) {
@@ -645,6 +702,7 @@
       drawLegend();
       drawWards();
       drawLedger();
+      drawRank();
       if (state.picked) showPicked(state.picked);
     });
   }
@@ -673,6 +731,7 @@
     drawStrip();
     drawWards();
     drawLedger();
+    drawRank();
     buildMap();
   }
 

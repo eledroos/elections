@@ -2,9 +2,9 @@
 
 Turnout and results data, prepared for the web. One folder for each election.
 
-The site is static. A build step reads the files an elections department sends,
-checks them, and writes JSON that the page reads. Cloudflare Pages serves the
-`site/` folder and runs no build of its own.
+The site is static. A build step reads the files an elections department sends.
+It checks them, then writes the JSON that the page reads. Cloudflare Pages
+serves the `site/` folder and runs no build of its own.
 
 ## Publish on Cloudflare Pages
 
@@ -74,17 +74,18 @@ write a correction that says what changed and why.
 ## Corrections
 
 `corrections.toml` holds every deliberate change to a published figure. Each
-entry gives the value it expects to find, so a revised file from the department
-cannot be rewritten by an old rule. The site shows the list as numbered notes,
-and a number appears beside each figure the change affects.
+entry gives the value it expects to find. If the department sends a revised
+file, the build stops instead of changing the new figure. The site shows the
+list as numbered notes. A number appears beside each figure the change affects.
 
 ## Where the data comes from
 
 - **Turnout**: the Boston Election Department, as workbooks through election day.
 - **Precinct boundaries**: [Boston Precinct Boundaries](https://data.boston.gov/dataset/boston-precinct-boundaries),
   City of Boston, Open Data Commons PDDL.
-- **Registered voters**: divided out of the count and the percentage that each
-  workbook gives. Every workbook agrees, which is the check that the method holds.
+- **Registered voters**: the count divided by the percentage, both of which
+  each workbook gives. Every workbook gives the same answer. That agreement is
+  the check that the method is correct.
 
 ## Layout
 
