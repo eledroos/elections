@@ -65,10 +65,13 @@
           <div id="map" role="region" aria-label="Map of Boston precincts shaded by turnout. The precinct table below carries the same figures as text."></div>
           <div class="legend" id="legend" aria-hidden="true"></div>
         </div>
-        <aside class="map-side" aria-labelledby="rank-h">
-          <div class="picked" id="picked" hidden aria-live="polite"></div>
-          <h3 id="rank-h" class="rank-h">Highest turnout so far</h3>
-          <ol class="rank" id="rank"></ol>
+        <aside class="map-side">
+          <div class="picked" id="picked" role="region"
+               aria-label="Chosen precinct" aria-live="polite"></div>
+          <section class="rank-block" aria-labelledby="rank-h">
+            <h3 id="rank-h" class="rank-h">Highest turnout so far</h3>
+            <ol class="rank" id="rank"></ol>
+          </section>
         </aside>
       </div>
     </div>
@@ -83,8 +86,8 @@
           <thead><tr>
             <th scope="col">Ward</th>
             <th scope="col" class="num">Ballots</th>
-            <th scope="col" class="num">Registered</th>
             <th scope="col" class="num">Turnout</th>
+            <th scope="col" class="num">Registered</th>
             <th scope="col" class="bar-col">Share</th>
           </tr></thead>
           <tbody></tbody>
@@ -96,7 +99,7 @@
   <section class="band" id="ledger" aria-labelledby="ledger-h">
     <div class="wrap">
       <h2 id="ledger-h">Every precinct</h2>
-      <p class="lede">Choose a row to find that precinct on the map. The precinct panel then gives its registered voters.</p>
+      <p class="lede">Choose a row to find that precinct on the map.</p>
       <div class="controls">
         <label class="field">
           <span>Find a precinct</span>
@@ -110,8 +113,8 @@
           <thead><tr>
             <th scope="col"><button type="button" data-sort="id" aria-label="Sort by precinct">Precinct</button></th>
             <th scope="col" class="num"><button type="button" data-sort="count" aria-label="Sort by ballots">Ballots</button></th>
-            <th scope="col" class="num"><button type="button" data-sort="registered" aria-label="Sort by registered voters">Registered</button></th>
             <th scope="col" class="num"><button type="button" data-sort="rate" aria-label="Sort by turnout">Turnout</button></th>
+            <th scope="col" class="num"><button type="button" data-sort="registered" aria-label="Sort by registered voters">Registered</button></th>
           </tr></thead>
           <tbody></tbody>
         </table>

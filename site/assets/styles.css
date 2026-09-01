@@ -213,7 +213,7 @@ a:hover { text-decoration-color: currentColor; }
 /* Below the two-column layout the frame fills the page. It must stretch, so
    the automatic side margins that centre it on a wide screen are removed;
    with them the frame sizes to its content and the map collapses. */
-@media (max-width: 61.99rem) {
+@media not all and (min-width: 62rem) {
   .map-frame { width: 100%; margin-inline: 0; }
   #map { width: 100%; aspect-ratio: auto; height: clamp(330px, 46vh, 430px); }
 }
@@ -264,6 +264,8 @@ a:hover { text-decoration-color: currentColor; }
   flex: 0 0 auto; width: 1.5rem; height: 1.5rem; margin-top: .1rem;
   border-radius: 4px; border: 1px solid rgba(0,0,0,.2);
 }
+.picked-chip-empty { border-style: dashed; border-color: var(--rule); background: transparent; }
+.rank-block { min-width: 0; }
 .picked h3 { margin: 0 0 .15rem; font-size: 1.0625rem; font-weight: 700; }
 .picked p { margin: 0; font-family: var(--mono); font-size: .8125rem; color: var(--ink-soft); }
 
@@ -289,9 +291,21 @@ a:hover { text-decoration-color: currentColor; }
 
 /* ---- tables ---- */
 
+/* A shadow at whichever edge still has table behind it, so a reader on a
+   narrow screen can see that the row continues. The gradients are painted
+   against the scrolling content, so they appear and clear on their own. */
 .scroll {
   overflow: auto; overscroll-behavior-x: contain;
-  border: 1px solid var(--rule); border-radius: 10px; background: var(--card);
+  border: 1px solid var(--rule); border-radius: 10px;
+  background:
+    linear-gradient(to right, var(--card) 30%, transparent) left center,
+    linear-gradient(to left,  var(--card) 30%, transparent) right center,
+    radial-gradient(farthest-side at 0 50%, rgba(22, 32, 43, .16), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, rgba(22, 32, 43, .16), transparent) right center;
+  background-repeat: no-repeat;
+  background-size: 36px 100%, 36px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+  background-color: var(--card);
 }
 .scroll.tall { max-height: 30rem; }
 
@@ -302,6 +316,7 @@ a:hover { text-decoration-color: currentColor; }
 }
 .grid thead th {
   position: sticky; top: 0; z-index: 2; background: var(--card);
+  /* Opaque, so the scroll shadow never shows through the header row. */
   border-bottom: 1px solid var(--rule);
   font-size: .6875rem; font-weight: 700; letter-spacing: .09em;
   text-transform: uppercase; color: var(--ink-faint); padding-block: .5rem;
@@ -338,10 +353,14 @@ a:hover { text-decoration-color: currentColor; }
 
 /* A superscript that is still large enough to hit. The negative margin keeps
    the enlarged target from moving the text around it. */
+/* Large enough to hit, and wide enough that two markers on one ward do not
+   sit on top of each other. Only the vertical margin is negative, so the
+   enlarged target never overlaps the marker beside it. */
 .ref {
-  display: inline-block; position: relative;
-  min-width: 24px; min-height: 24px; margin: -8px -7px;
-  padding: 8px 7px; line-height: 8px; text-align: center;
+  display: inline-block;
+  min-width: 24px; min-height: 24px;
+  margin: -8px 0 -8px 2px; padding: 8px 4px;
+  line-height: 8px; text-align: center;
   font-family: var(--sans); font-size: .6875rem; font-weight: 700;
   vertical-align: super; color: var(--stamp); text-decoration: none;
 }
@@ -404,10 +423,10 @@ a:hover { text-decoration-color: currentColor; }
   .tally { padding-top: 1.35rem; }
   .tick { flex-basis: 7.25rem; padding: .65rem .7rem .7rem; }
   .tick-fill { height: 3.5rem; }
-  .grid th, .grid td { padding: .7rem .6rem; }
-  /* Turnout is the figure people came for, so it must not scroll off.
-     Registered voters stay one tap away in the precinct panel. */
-  .ledger-grid th:nth-child(3), .ledger-grid td:nth-child(3) { display: none; }
+  .grid th, .grid td { padding: .7rem .55rem; }
+  /* Turnout sits next to Ballots so both stay in view on a narrow screen.
+     Registered voters keep their column and scroll into view in the table. */
+  .grid .num { font-size: .875rem; }
   .scroll.tall { max-height: 25rem; }
   .legend { font-size: .6875rem; padding: .45rem .55rem; }
   .bar-col { display: none; }

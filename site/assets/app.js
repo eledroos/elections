@@ -25,7 +25,6 @@
     map: null,
     layer: null,
     tiles: null,
-    frame: null,
     shapes: {},
     noteOf: {}
   };
@@ -248,7 +247,6 @@
       zoomDelta: 0.5
     });
     state.map = map;
-    state.frame = null;
 
     var frame = [[b[1], b[0]], [b[3], b[2]]];
     function fit() { map.invalidateSize(); map.fitBounds(frame, { padding: [10, 10] }); }
@@ -315,8 +313,16 @@
       commas.format(row.registered) + " (" + pct(row.rate) + ")";
   }
 
+  /* A half-percent or two-and-a-half-percent step needs a decimal place.
+     Without one the legend prints "1% to 1%" and hides a whole class. */
+  function breakPlaces() {
+    var step = (state.breaks[1] - state.breaks[0]) * 100;
+    return Math.abs(step - Math.round(step)) > 1e-9 ? 1 : 0;
+  }
+
   function drawLegend() {
     var legend = el("legend");
+    var places = breakPlaces();
     legend.textContent = "";
     var title = document.createElement("span");
     title.className = "legend-title";
@@ -331,8 +337,8 @@
       chip.style.background = css(RAMP[index]);
       var label = document.createElement("span");
       label.textContent = high === undefined
-        ? pct(low, 0) + " and above"
-        : pct(low, 0) + " to " + pct(high, 0);
+        ? pct(low, places) + " and above"
+        : pct(low, places) + " to " + pct(high, places);
       row.append(chip, label);
       legend.appendChild(row);
     });
@@ -348,6 +354,13 @@
     shape.bringToFront();
     if (fly) return;
     state.map.fitBounds(shape.getBounds(), { maxZoom: 15, padding: [40, 40] });
+  }
+
+  /* Below the two column layout the rank list sits under the map. */
+  function revealMap() {
+    var box = el("map").getBoundingClientRect();
+    if (box.top >= 0 && box.bottom <= window.innerHeight) return;
+    el("map").scrollIntoView({ block: "center", behavior: STILL ? "auto" : "smooth" });
   }
 
   function drawRank() {
@@ -382,17 +395,46 @@
         button.addEventListener("click", function () {
           showPicked(row.id);
           highlight(row.id);
+          revealMap();
         });
         item.appendChild(button);
         list.appendChild(item);
       });
   }
 
+  /* Bring a row into view inside the table's own box. scrollIntoView would
+     scroll every scrolling ancestor, which drags the whole page down to the
+     table when the reader only chose a precinct on the map. */
+  function revealRow(tr) {
+    var box = tr.closest(".scroll");
+    if (!box) return;
+    var row = tr.getBoundingClientRect();
+    var frame = box.getBoundingClientRect();
+    var header = box.querySelector("thead");
+    var top = frame.top + (header ? header.getBoundingClientRect().height : 0);
+    if (row.top < top) box.scrollTop -= top - row.top;
+    else if (row.bottom > frame.bottom) box.scrollTop += row.bottom - frame.bottom;
+  }
+
+  function clearPicked() {
+    state.picked = null;
+    var box = el("picked");
+    box.textContent = "";
+    var chip = document.createElement("span");
+    chip.className = "picked-chip picked-chip-empty";
+    var text = document.createElement("div");
+    var head = document.createElement("h3");
+    head.textContent = "No precinct chosen";
+    var line = document.createElement("p");
+    line.textContent = "Choose one on the map, or in the table below.";
+    text.append(head, line);
+    box.append(chip, text);
+  }
+
   function showPicked(id) {
     state.picked = id;
     var row = state.rows.filter(function (r) { return r.id === id; })[0];
     var box = el("picked");
-    box.hidden = false;
     box.textContent = "";
 
     var chip = document.createElement("span");
@@ -415,7 +457,7 @@
     document.querySelectorAll("#precincts tbody tr").forEach(function (tr) {
       var on = tr.dataset.id === id;
       tr.classList.toggle("on", on);
-      if (on) tr.scrollIntoView({ block: "nearest", behavior: STILL ? "auto" : "smooth" });
+      if (on) revealRow(tr);
     });
   }
 
@@ -451,8 +493,8 @@
       tr.append(
         head,
         cell(commas.format(w.count), "num"),
-        cell(commas.format(w.registered), "num"),
-        cell(pct(w.rate), "num")
+        cell(pct(w.rate), "num"),
+        cell(commas.format(w.registered), "num")
       );
       var barCell = document.createElement("td");
       barCell.className = "bar-col";
@@ -481,25 +523,33 @@
     });
   }
 
-  /* Accepts a ward number, a precinct code, or the shorthand the table shows:
-     "8", "ward 8", "w8", "0803", "w8 p3". Anything else matches nothing, so
-     the reader sees the empty state instead of the whole city. */
+  /* Understands what the table shows and what the placeholder teaches:
+     "8", "08", "ward 8", "w8", "w08", "0803", "803", "w8 p3". A ward number
+     always means that ward exactly, whether or not a "w" came before it.
+     Anything else matches nothing, so the reader sees the empty state
+     instead of the whole city. */
+  var QUERY = /^(?:(w|ward)\s*)?(\d*)(?:\s*(?:p|precinct)\s*(\d*))?$/;
+
   function matches(row, needle) {
-    if (!needle) return true;
-    var text = needle.toLowerCase().replace(/[^a-z0-9]/g, "");
+    var text = String(needle).toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
     if (!text) return true;
 
-    if (/^[0-9]+$/.test(text)) {
-      if (text.length >= 3) return row.id.indexOf(text) === 0;
-      return row.ward === parseInt(text, 10);
+    var parts = QUERY.exec(text);
+    if (!parts) return false;
+
+    var named = !!parts[1];
+    var ward = parts[2];
+    var precinct = parts[3];
+
+    /* A bare run of three or four digits is a precinct code, not a ward. */
+    if (!named && precinct === undefined && ward.length >= 3) {
+      var code = ward.length === 3 ? "0" + ward : ward;
+      return row.id.indexOf(ward) === 0 || row.id.indexOf(code) === 0;
     }
 
-    return [
-      "w" + row.ward + "p" + row.precinct,
-      "ward" + row.ward + "precinct" + row.precinct,
-      "ward" + row.ward,
-      "w" + row.ward
-    ].some(function (form) { return form.indexOf(text) === 0; });
+    if (ward && parseInt(ward, 10) !== row.ward) return false;
+    if (precinct) return parseInt(precinct, 10) === row.precinct;
+    return named || !!ward;
   }
 
   function drawLedger() {
@@ -554,13 +604,13 @@
       tr.append(
         head,
         cell(commas.format(row.count), "num"),
-        cell(row.registered === null ? "—" : commas.format(row.registered), "num"),
-        cell(pct(row.rate), "num")
+        cell(pct(row.rate), "num"),
+        cell(row.registered === null ? "\u2014" : commas.format(row.registered), "num")
       );
       tr.addEventListener("click", function () {
         showPicked(row.id);
         highlight(row.id);
-        el("map").scrollIntoView({ block: "center", behavior: STILL ? "auto" : "smooth" });
+        revealMap();
       });
       fragment.appendChild(tr);
     });
@@ -732,6 +782,7 @@
     drawWards();
     drawLedger();
     drawRank();
+    clearPicked();
     buildMap();
   }
 
