@@ -7,6 +7,7 @@ check fails.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tomllib
 from pathlib import Path
@@ -36,7 +37,11 @@ def build_election(directory: Path) -> dict:
     registration_by_snapshot: list[tuple[str, dict[str, int]]] = []
     applied_all: list[cx.Correction] = []
 
-    for entry in config["snapshot"]:
+    # Time decides the order, not the order the blocks were typed in. The
+    # checks below compare each snapshot with the one before it.
+    entries = sorted(config["snapshot"], key=lambda item: item["time"])
+
+    for entry in entries:
         parsed = bt.parse_workbook(
             sources / entry["file"],
             counts_sheet=entry.get("counts_sheet", 0),
@@ -143,7 +148,26 @@ def main() -> int:
     index.sort(key=lambda e: e["date"], reverse=True)
     _write_json(SITE_DATA / "elections.json", {"elections": index})
     print(f"  wrote site/data/elections.json ({len(index)} election(s))")
+
+    for stale in prune(set(entry["id"] for entry in index)):
+        print(f"  removed stale data for {stale}")
     return 0
+
+
+def prune(live: set[str]) -> list[str]:
+    """Remove generated data for elections that no longer exist.
+
+    Without this, deleting an election folder leaves its data in site/, and
+    the site keeps serving figures whose source is gone.
+    """
+    removed = []
+    if not SITE_DATA.exists():
+        return removed
+    for directory in sorted(SITE_DATA.iterdir()):
+        if directory.is_dir() and directory.name not in live:
+            shutil.rmtree(directory)
+            removed.append(directory.name)
+    return removed
 
 if __name__ == "__main__":
     raise SystemExit(main())

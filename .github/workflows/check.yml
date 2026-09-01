@@ -1,0 +1,36 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run the pipeline tests
+        run: python -m pytest pipeline/tests -q
+
+      - name: Rebuild the site data
+        run: python -m pipeline.build
+
+      # Cloudflare Pages serves the committed files and runs no build. If the
+      # rebuild changes anything, the published figures do not match the
+      # sources in this commit.
+      - name: Check the committed data matches the sources
+        run: |
+          if ! git diff --quiet -- site/data; then
+            echo "::error::site/data is out of date. Run 'make' and commit the result."
+            git diff --stat -- site/data
+            exit 1
+          fi
+          echo "site/data matches the source files."

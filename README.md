@@ -57,6 +57,13 @@ and shows a chooser when there is more than one.
 Python 3.11 or later. Install the two dependencies with
 `pip install -r pipeline/requirements.txt`.
 
+## Continuous integration
+
+`.github/workflows/check.yml` runs the tests on every push. It then rebuilds
+the site data and fails if the result differs from what the commit holds.
+That check catches a source file added without a rebuild, because Cloudflare
+Pages serves the committed files and would publish the old figures.
+
 ## Checks
 
 The build stops if a source file holds any of these:

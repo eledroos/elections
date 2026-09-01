@@ -50,3 +50,15 @@ def test_tolerates_one_voter_of_rounding_drift():
         ("0900", {"0101": 1638}),
         ("1200", {"0101": 1639}),
     ])
+
+
+def test_checks_a_precinct_that_only_appears_in_later_snapshots():
+    """A precinct absent from the first file must still be checked."""
+    with pytest.raises(v.ValidationError) as err:
+        v.check_registration_agrees([
+            ("0900", {"0101": 1638}),
+            ("1200", {"0101": 1638, "0102": 900}),
+            ("1600", {"0101": 1638, "0102": 400}),
+        ])
+    assert "0102" in str(err.value)
+    assert "1200" in str(err.value) and "1600" in str(err.value)

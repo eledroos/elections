@@ -64,14 +64,20 @@ def check_monotonic(snapshots: list[dict]) -> None:
                 )
 
 def check_registration_agrees(derived: list[tuple[str, dict[str, int]]]) -> None:
-    """Registered voters must not move between snapshots of one election day."""
-    if len(derived) < 2:
-        return
-    first_id, first = derived[0]
-    for snapshot_id, other in derived[1:]:
-        for identifier in set(first) & set(other):
-            if abs(first[identifier] - other[identifier]) > REGISTRATION_TOLERANCE:
+    """Registered voters must not move between snapshots of one election day.
+
+    Each snapshot is compared against every precinct seen so far, not only
+    against the first one, so a precinct that appears late is still checked.
+    """
+    known: dict[str, tuple[str, int]] = {}
+    for snapshot_id, found in derived:
+        for identifier, count in found.items():
+            seen = known.get(identifier)
+            if seen is None:
+                known[identifier] = (snapshot_id, count)
+                continue
+            if abs(seen[1] - count) > REGISTRATION_TOLERANCE:
                 raise ValidationError(
-                    f"precinct {identifier} has {first[identifier]} registered "
-                    f"voters at {first_id} but {other[identifier]} at {snapshot_id}"
+                    f"precinct {identifier} has {seen[1]} registered voters at "
+                    f"{seen[0]} but {count} at {snapshot_id}"
                 )
